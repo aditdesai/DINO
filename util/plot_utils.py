@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path, PurePath
 
 
-def plot_logs(logs, fields=('class_error', 'loss_bbox_unscaled', 'mAP'), ewm_col=0, log_name='log.txt'):
+def plot_logs(logs, fields=('class_error', 'loss_bbox', 'loss'), ewm_col=0, log_name='log.txt'):
     '''
     Function to plot specific fields from training log(s). Plots both training and test results.
 
@@ -53,6 +53,8 @@ def plot_logs(logs, fields=('class_error', 'loss_bbox_unscaled', 'mAP'), ewm_col
     dfs = [pd.read_json(Path(p) / log_name, lines=True) for p in logs]
 
     fig, axs = plt.subplots(ncols=len(fields), figsize=(16, 5))
+    if len(fields) == 1:
+        axs = [axs] 
 
     for df, color in zip(dfs, sns.color_palette(n_colors=len(logs))):
         for j, field in enumerate(fields):
@@ -62,7 +64,10 @@ def plot_logs(logs, fields=('class_error', 'loss_bbox_unscaled', 'mAP'), ewm_col
                 ).ewm(com=ewm_col).mean()
                 axs[j].plot(coco_eval, c=color)
             else:
-                df.interpolate().ewm(com=ewm_col).mean().plot(
+                print(df[['train_loss', 'test_loss']].dtypes)
+                print(df[['train_loss', 'test_loss']].head())
+
+                df[['train_loss', 'test_loss']].interpolate().ewm(com=ewm_col).mean().plot(
                     y=[f'train_{field}', f'test_{field}'],
                     ax=axs[j],
                     color=[color] * 2,
